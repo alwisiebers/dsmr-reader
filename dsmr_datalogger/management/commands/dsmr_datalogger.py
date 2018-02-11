@@ -1,3 +1,5 @@
+import sys
+
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.translation import ugettext as _
 from django.conf import settings
