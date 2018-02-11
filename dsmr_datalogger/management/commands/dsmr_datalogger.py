@@ -1,5 +1,3 @@
-import sys
-
 from django.core.management.base import BaseCommand, CommandError
 from django.utils.translation import ugettext as _
 from django.conf import settings
@@ -24,16 +22,16 @@ class Command(InfiniteManagementCommandMixin, BaseCommand):
         if not datalogger_settings.track:
             raise CommandError("Datalogger tracking is DISABLED!")
 
-        print(' - Calling dsmr_datalogger.services.read_telegram()', file=sys.stderr)
+        print(' - Calling dsmr_datalogger.services.read_telegram()')
         telegram = dsmr_datalogger.services.read_telegram()
 
         # Reflect output to STDOUT for logging and convenience.
         self.stdout.write(telegram)
-        print(' - Calling: dsmr_datalogger.services.telegram_to_reading()', file=sys.stderr)
+        print(' - Calling: dsmr_datalogger.services.telegram_to_reading()')
         try:
             dsmr_datalogger.services.telegram_to_reading(data=telegram)
         except InvalidTelegramError:
             # The service called already logs the error.
-            print(' - InvalidTelegramError', file=sys.stderr)
+            print(' - InvalidTelegramError')
 
-        print(' - End', file=sys.stderr)
+        print(' - End')
