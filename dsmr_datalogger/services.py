@@ -51,7 +51,7 @@ def get_dsmr_connection_parameters():
 def read_telegram():
     """ Reads the serial port until we can create a reading point. """
     connection_parameters = get_dsmr_connection_parameters()
-
+    print(' - read_telegram()')
     serial_handle = serial.Serial()
     serial_handle.port = connection_parameters['com_port']
     serial_handle.baudrate = connection_parameters['baudrate']
@@ -61,7 +61,7 @@ def read_telegram():
     serial_handle.xonxoff = 1
     serial_handle.rtscts = 0
     serial_handle.timeout = 20
-
+    print(' - serial_handle.open()')
     # This might fail, but nothing we can do so just let it crash.
     serial_handle.open()
 
@@ -70,18 +70,20 @@ def read_telegram():
 
     # Just keep fetching data until we got what we were looking for.
     while True:
+        print(' - Start of loop')
         try:
             # Since #79 we use an infinite datalogger loop and signals to break out of it. Serial
             # operations however do not work well with interrupts, so we'll have to check for E-INTR.
             data = serial_handle.readline()
         except SerialException as error:
+            print(' - Error: {}'.format(error))
             if str(error) == 'read failed: [Errno 4] Interrupted system call':
                 # If we were signaled to stop, we still have to finish our loop.
                 continue
 
             # Something else and unexpected failed.
             raise
-
+        print(' - Data: {}'.format(data))
         try:
             # Make sure weird characters are converted properly.
             data = str(data, 'utf-8')
@@ -91,16 +93,19 @@ def read_telegram():
         # This guarantees we will only parse complete telegrams. (issue #74)
         if data.startswith('/'):
             telegram_start_seen = True
+            print(' - Start of telegram seen')
 
             # But make sure to RESET any data collected as well! (issue #212)
             buffer = ''
 
         # Delay any logging until we've seen the start of a telegram.
         if telegram_start_seen:
+            print(' - Adding to buffer: {}'.format(data))
             buffer += data
 
         # Telegrams ends with '!' AND we saw the start. We should have a complete telegram now.
         if data.startswith('!') and telegram_start_seen:
+            print(' - End of telegram seen')
             serial_handle.close()
             return buffer
 
