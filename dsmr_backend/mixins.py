@@ -62,7 +62,7 @@ class InfiniteManagementCommandMixin(object):
             try:
                 self.run(**options)
             except Exception as error:
-                self.stderr.write(' [!] Exception raised in run(): {}'.format(error))
+                self.stdout.write(' [!] Exception raised in run(): {}'.format(error))
 
             if self.sleep_time is not None:
                 self.stdout.write('Command completed. Sleeping for {} second(s)...'.format(self.sleep_time))
