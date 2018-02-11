@@ -9,6 +9,7 @@ import pytz
 from dsmr_backend.tests.mixins import InterceptStdoutMixin
 from dsmr_datalogger.models.reading import DsmrReading
 from dsmr_datalogger.models.settings import DataloggerSettings
+import dsmr_datalogger
 
 
 class TestDataloggerError(InterceptStdoutMixin, TestCase):
@@ -315,3 +316,47 @@ class TestFutureTelegrams(InterceptStdoutMixin, TestCase):
 
         # It should be discarded.
         self.assertFalse(DsmrReading.objects.exists())
+
+
+class TestDataloggerDecodeError(InterceptStdoutMixin, TestCase):
+    def _dsmr_dummy_data(self):
+        """ Returns invalid telegram with invalid UTF-8. """
+        return [
+            b"/KFM5KAIFA\0xb1-METER\r\n",
+            b"\r\n",
+            b"1-3:0.2.8(42)\r\n",
+            b"0-0:1.0.0(160303164347W\xd7)\r\n",
+            b"0-0:96.1.1(*******************************)\r\n",
+            b"1-0:1.8.1(0010\xb873.079*kWh)\r\n",
+            b"1-0:1.8.2(001263.199*kWh)\r\n",
+            b"1-0:2.8.1(000000.000*\xebkWh)\r\n",
+            b"1-0:2.8.2(000000.000*kWh)\r\n",
+            b"0-0:96.14.0(0002)\r\n",
+            b"1-0:1.7.0(00.143*kW)\r\n",
+            b"1-0:2.7.0(00.000*kW)\r\n",
+            b"0-0:96.7.21(00006)\r\n",
+            b"0-0:96.7.9(00003)\r\n",
+            b"1-0:99.97.0(1)(0-0:96.7.19)(000101000001W)(2147483647*s)\r\n",
+            b"1-0:32.32.0(00000)\r\n",
+            b"1-0:32.36.0(00000)\r\n",
+            b"0-0:96.13.1()\r\n",
+            b"0-0:96.13.0()\r\n",
+            b"1-0:31.7.0(000*A)\r\n",
+            b"1-0:21.7.0(00.143*kW)\r\n",
+            b"1-0:22.7.0(00.000*kW)\r\n",
+            b"!ABCD\n",
+        ]
+
+    @mock.patch('serial.Serial.open')
+    @mock.patch('serial.Serial.readline')
+    def test_okay(self, serial_readline_mock, serial_open_mock):
+        """ Fake & process an DSMR vX telegram reading. """
+        serial_open_mock.return_value = None
+        serial_readline_mock.side_effect = self._dsmr_dummy_data()
+
+        # Ignore CRC verification.
+        DataloggerSettings.objects.update(verify_telegram_crc=False)
+        self.assertFalse(DsmrReading.objects.exists())
+
+        telegram = dsmr_datalogger.services.read_telegram()
+        self.assertTrue(len(telegram) == 519)

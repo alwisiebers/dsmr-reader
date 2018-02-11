@@ -22,16 +22,13 @@ class Command(InfiniteManagementCommandMixin, BaseCommand):
         if not datalogger_settings.track:
             raise CommandError("Datalogger tracking is DISABLED!")
 
-        print(' - Calling dsmr_datalogger.services.read_telegram()')
         telegram = dsmr_datalogger.services.read_telegram()
 
         # Reflect output to STDOUT for logging and convenience.
         self.stdout.write(telegram)
-        print(' - Calling: dsmr_datalogger.services.telegram_to_reading()')
+
         try:
             dsmr_datalogger.services.telegram_to_reading(data=telegram)
         except InvalidTelegramError:
             # The service called already logs the error.
-            print(' - InvalidTelegramError')
-
-        print(' - End')
+            pass
