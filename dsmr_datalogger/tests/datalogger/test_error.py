@@ -322,7 +322,7 @@ class TestDataloggerDecodeError(InterceptStdoutMixin, TestCase):
     def _dsmr_dummy_data(self):
         """ Returns invalid telegram with invalid UTF-8. """
         return [
-            b"/KFM5KAIFA\0xb1-METER\r\n",
+            b"/KFM5KAIFA\xb1-METER\r\n",
             b"\r\n",
             b"1-3:0.2.8(42)\r\n",
             b"0-0:1.0.0(160303164347W\xd7)\r\n",
@@ -359,4 +359,4 @@ class TestDataloggerDecodeError(InterceptStdoutMixin, TestCase):
         self.assertFalse(DsmrReading.objects.exists())
 
         telegram = dsmr_datalogger.services.read_telegram()
-        self.assertTrue(len(telegram) == 519)
+        self.assertTrue(len(telegram) == 523)

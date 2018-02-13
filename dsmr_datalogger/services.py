@@ -84,9 +84,11 @@ def read_telegram():
 
         try:
             # Make sure weird characters are converted properly.
-            data = str(data, 'utf-8', 'ignore')
-        except TypeError:
-            pass
+            data = str(data, 'utf-8')
+        except (TypeError, UnicodeDecodeError):
+            # Strip any unwanted characters.
+            data = re.sub(r'\\x[0-9a-z]{2,2}', '', str(data))
+            data = data.lstrip("b'").rstrip("'")
 
         # This guarantees we will only parse complete telegrams. (issue #74)
         if data.startswith('/'):
