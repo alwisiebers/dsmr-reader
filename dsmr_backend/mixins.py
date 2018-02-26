@@ -12,8 +12,10 @@ from django.db import connection
 class InfiniteManagementCommandMixin(object):
     """ Mixin for long running management commands, only stopping (gracefully) on SIGHUP signal. """
     sleep_time = None
+    max_run_count = None
     _keep_alive = None
     _pid_file = None
+    _run_count = None
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -58,11 +60,22 @@ class InfiniteManagementCommandMixin(object):
         self._keep_alive = True
         print('Starting infinite command loop...')  # Just to make sure it gets printed.
 
+        self._run_count = 0
+
         while self._keep_alive:
+
             try:
                 self.run(**options)
             except Exception as error:
                 self.stdout.write(' [!] Exception raised in run(): {}'.format(error))
+
+            # If we have a run cap, make sure to maintain it.
+            if self.max_run_count is not None:
+                self._run_count += 1
+
+                if self._run_count >= self.max_run_count:
+                    self.stdout.write('Reached max number of runs ({}), exiting....'.format(self.max_run_count))
+                    sys.exit(0)
 
             if self.sleep_time is not None:
                 self.stdout.write('Command completed. Sleeping for {} second(s)...'.format(self.sleep_time))

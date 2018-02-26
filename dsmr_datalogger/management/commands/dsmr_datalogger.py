@@ -11,8 +11,8 @@ import dsmr_datalogger.services
 class Command(InfiniteManagementCommandMixin, BaseCommand):
     help = _('Performs an DSMR P1 telegram reading on the COM port.')
     name = __name__  # Required for PID file.
-    sleep_time = 0.25
     sleep_time = settings.DSMRREADER_DATALOGGER_SLEEP
+    max_run_count = 10
 
     def run(self, **options):
         """ InfiniteManagementCommandMixin listens to handle() and calls run() in a loop. """
